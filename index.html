@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Pergantian Sparepart</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .header-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Laporan Pergantian Sparepart</h2>
+
+        <!-- Header Input -->
+        <div class="header-container">
+            <label>Unit: <input type="text" id="unit"></label>
+            <label>Lokasi: <input type="text" id="lokasi"></label>
+            <label>Mekanik: <input type="text" id="headerMekanik"></label>
+            <label>No. Alat: <input type="text" id="noAlat"></label>
+        </div>
+
+        <!-- Form Laporan -->
+        <form id="reportForm">
+            <label>Hari: <input type="text" id="hari" required></label>
+            <label>Tanggal: <input type="date" id="tanggal" required></label>
+            <label>Total Unit: <input type="number" id="totalUnit" required></label>
+            <label>Repair / Penggantian Part:</label>
+            <textarea id="repairPart" rows="3" required></textarea>
+            <label>Keterangan:</label>
+            <textarea id="keterangan" rows="3"></textarea>
+            <label>Pelaksana/Mekanik: <input type="text" id="mekanik" required></label>
+
+            <button type="submit" class="btn btn-primary">Tambah Laporan</button>
+        </form>
+
+        <!-- Tabel Laporan -->
+        <table id="reportTable">
+            <thead>
+                <tr>
+                    <th>Hari</th>
+                    <th>Tanggal</th>
+                    <th>Total Unit</th>
+                    <th>Repair / Penggantian Part</th>
+                    <th>Keterangan</th>
+                    <th>Pelaksana/Mekanik</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="reportTableBody">
+                <!-- Data akan muncul di sini -->
+            </tbody>
+        </table>
+
+        <button onclick="downloadPDF()" class="btn btn-success">Download PDF</button>
+    </div>
+
+    <script>
+        document.getElementById("reportForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            let reportData = {
+                hari: document.getElementById("hari").value,
+                tanggal: document.getElementById("tanggal").value,
+                totalUnit: document.getElementById("totalUnit").value,
+                repairPart: document.getElementById("repairPart").value,
+                keterangan: document.getElementById("keterangan").value,
+                mekanik: document.getElementById("mekanik").value
+            };
+
+            let reports = JSON.parse(localStorage.getItem("reports")) || [];
+            reports.push(reportData);
+            localStorage.setItem("reports", JSON.stringify(reports));
+
+            loadReports();
+            document.getElementById("reportForm").reset();
+        });
+
+        function loadReports() {
+            let reports = JSON.parse(localStorage.getItem("reports")) || [];
+            let reportTableBody = document.getElementById("reportTableBody");
+            reportTableBody.innerHTML = "";
+
+            reports.forEach((report, index) => {
+                let row = `<tr>
+                    <td>${report.hari}</td>
+                    <td>${report.tanggal}</td>
+                    <td>${report.totalUnit}</td>
+                    <td>${report.repairPart}</td>
+                    <td>${report.keterangan}</td>
+                    <td>${report.mekanik}</td>
+                    <td><button class="btn btn-danger" onclick="deleteReport(${index})">Hapus</button></td>
+                </tr>`;
+                reportTableBody.innerHTML += row;
+            });
+        }
+
+        function deleteReport(index) {
+            let reports = JSON.parse(localStorage.getItem("reports")) || [];
+            reports.splice(index, 1);
+            localStorage.setItem("reports", JSON.stringify(reports));
+            loadReports();
+        }
+
+        function downloadPDF() {
+    let { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+
+    // Tambahkan gambar logo di kiri atas
+    let img = new Image();
+    img.src = 'image.png'; // Pastikan file ada di lokasi yang benar
+
+    img.onload = function () {
+        doc.addImage(img, 'PNG', 10, 10, 30, 30); // (x, y, lebar, tinggi)
+
+        // Tambahkan teks header perusahaan
+        doc.setFontSize(16);
+        doc.text("PT. EMITRACO INVESTAMA MANDIRI", 50, 20);
+        doc.setFontSize(16);
+        doc.text("Laporan Pergantian Sparepart", 50, 28);
+
+        // Ambil data dari form
+        let unit = document.getElementById("unit").value;
+        let lokasi = document.getElementById("lokasi").value;
+        let mekanik = document.getElementById("headerMekanik").value;
+        let noAlat = document.getElementById("noAlat").value;
+
+        // Tambahkan informasi header laporan
+        doc.setFontSize(10);
+        doc.text(`Unit      : ${unit}`, 10, 50);
+        doc.text(`Lokasi    : ${lokasi}`, 10, 56);
+        doc.text(`Mekanik   : ${mekanik}`, 10, 62);
+        doc.text(`No. Alat  : ${noAlat}`, 10, 68);
+
+        // Ambil data laporan dari localStorage
+        let reports = JSON.parse(localStorage.getItem("reports")) || [];
+
+        // Buat tabel dengan autoTable agar rapi
+        doc.autoTable({
+            startY: 75, // Mulai tabel setelah header
+            head: [['Hari', 'Tanggal', 'Total Unit', 'Repair / Penggantian Part', 'Keterangan', 'Pelaksana/Mekanik']],
+            body: reports.map(report => [
+                report.hari,
+                report.tanggal,
+                report.totalUnit,
+                report.repairPart,
+                report.keterangan,
+                report.mekanik
+            ]),
+            theme: 'grid', // Tampilan tabel dengan garis
+            headStyles: { fillColor: [0, 123, 255] }, // Warna biru pada header tabel
+            styles: { fontSize: 10, cellPadding: 2 } // Ukuran font tabel lebih kecil agar muat
+        });
+
+        // Simpan PDF dengan nama file yang lebih deskriptif
+         doc.save("Laporan_Pergantian_Sparepart.pdf");
+    };
+}
+
+        loadReports();
+
+        
+    </script>
+
+</body>
+</html>
