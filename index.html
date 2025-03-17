@@ -135,29 +135,64 @@
 
     <script>
 
-var canvas = document.getElementById('signature-pad');
-var ctx = canvas.getContext('2d');
+var canvas = document.getElementById("signature-pad");
+var ctx = canvas.getContext("2d");
 var drawing = false;
-var signaturePreview = document.getElementById('signature-preview');
 
-// Mulai menggambar
-canvas.addEventListener('mousedown', function(e) {
+// Fungsi untuk mulai menggambar (Mouse & Touch)
+function startDrawing(event) {
+    event.preventDefault(); // Mencegah scroll saat menggambar
     drawing = true;
+    let pos = getPosition(event);
     ctx.beginPath();
-    ctx.moveTo(e.offsetX, e.offsetY);
-});
+    ctx.moveTo(pos.x, pos.y);
+}
 
-canvas.addEventListener('mousemove', function(e) {
-    if (drawing) {
-        ctx.lineTo(e.offsetX, e.offsetY);
-        ctx.stroke();
-    }
-});
+// Fungsi untuk menggambar (Mouse & Touch)
+function draw(event) {
+    if (!drawing) return;
+    let pos = getPosition(event);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+}
 
-canvas.addEventListener('mouseup', function() {
+// Fungsi untuk berhenti menggambar
+function stopDrawing() {
     drawing = false;
-    saveSignature();
-});
+}
+
+// Fungsi untuk mendapatkan posisi kursor/touch relatif terhadap canvas
+function getPosition(event) {
+    let rect = canvas.getBoundingClientRect();
+    let x, y;
+    
+    if (event.touches) { // Jika layar sentuh
+        x = event.touches[0].clientX - rect.left;
+        y = event.touches[0].clientY - rect.top;
+    } else { // Jika mouse
+        x = event.offsetX;
+        y = event.offsetY;
+    }
+
+    return { x, y };
+}
+
+// Fungsi untuk menghapus tanda tangan
+function clearSignature() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// Event Listener untuk Mouse
+canvas.addEventListener("mousedown", startDrawing);
+canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("mouseup", stopDrawing);
+canvas.addEventListener("mouseleave", stopDrawing);
+
+// Event Listener untuk Layar Sentuh
+canvas.addEventListener("touchstart", startDrawing);
+canvas.addEventListener("touchmove", draw);
+canvas.addEventListener("touchend", stopDrawing);
+
 
 function clearSignature() {
     if (ctx) {
