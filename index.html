@@ -76,13 +76,12 @@
 <body>
 
     <div class="container">
-    <div style="text-align: center; margin-bottom: 20px;">
-        <img src="image.png" alt="Logo Perusahaan" style="height: 60px;">
-        <h3 style="margin: 5px 0; color: #333;">PT. EMITRACO INVESTAMA MANDIRI</h3>
-    </div>
-    <h2>Laporan Pergantian Sparepart</h2>
-
-
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="image.png" alt="Logo Perusahaan" style="height: 60px;">
+            <h3 style="margin: 5px 0; color: #333;">PT. EMITRACO INVESTAMA MANDIRI</h3>
+        </div>
+        <h2>Laporan Pergantian Sparepart</h2>
+    
         <!-- Header Input -->
         <div class="header-container">
             <label>Unit: <input type="text" id="unit"></label>
@@ -101,6 +100,15 @@
             <label>Keterangan:</label>
             <textarea id="keterangan" rows="3"></textarea>
             <label>Pelaksana/Mekanik: <input type="text" id="mekanik" required></label>
+
+            <h5 class="mt-4">Tanda Tangan:</h5>
+<canvas id="signature-pad" width="300" height="100" style="border:1px solid #000; background-color: #fff;"></canvas>
+<br>
+<button type="button" class="btn btn-danger no-print" onclick="clearSignature()">Hapus</button>
+
+<br><br>
+<img id="signature-preview" src="" style="display:none; border:1px solid #000; width: 300px; height: 100px;">
+
 
             <button type="submit" class="btn btn-primary">Tambah Laporan</button>
         </form>
@@ -122,11 +130,52 @@
                 <!-- Data akan muncul di sini -->
             </tbody>
         </table>
-
         <button onclick="downloadPDF()" class="btn btn-success">Download PDF</button>
     </div>
 
     <script>
+
+var canvas = document.getElementById('signature-pad');
+var ctx = canvas.getContext('2d');
+var drawing = false;
+var signaturePreview = document.getElementById('signature-preview');
+
+// Mulai menggambar
+canvas.addEventListener('mousedown', function(e) {
+    drawing = true;
+    ctx.beginPath();
+    ctx.moveTo(e.offsetX, e.offsetY);
+});
+
+canvas.addEventListener('mousemove', function(e) {
+    if (drawing) {
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+    }
+});
+
+canvas.addEventListener('mouseup', function() {
+    drawing = false;
+    saveSignature();
+});
+
+function clearSignature() {
+    if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Hapus hanya di dalam canvas
+    }
+    let signaturePreview = document.getElementById('signature-preview');
+    if (signaturePreview) {
+        signaturePreview.style.display = 'none';
+        signaturePreview.src = '';
+    }
+}
+
+function saveSignature() {
+    var dataURL = canvas.toDataURL('image/png');
+    signaturePreview.src = dataURL;
+    signaturePreview.style.display = 'block';
+}
+
         document.getElementById("reportForm").addEventListener("submit", function(event) {
             event.preventDefault();
 
@@ -222,6 +271,14 @@
             headStyles: { fillColor: [0, 123, 255] }, // Warna biru pada header tabel
             styles: { fontSize: 10, cellPadding: 2 } // Ukuran font tabel lebih kecil agar muat
         });
+
+         // Ambil tanda tangan dari canvas
+         let signatureCanvas = document.getElementById("signature-pad");
+        let signatureImage = signatureCanvas.toDataURL("image/png");
+
+        // Tambahkan tanda tangan ke PDF setelah tabel
+        doc.text("Tanda Tangan:", 10, doc.lastAutoTable.finalY + 10);
+        doc.addImage(signatureImage, 'PNG', 10, doc.lastAutoTable.finalY + 15, 50, 25);
 
         // Simpan PDF dengan nama file yang lebih deskriptif
          doc.save("Laporan_Pergantian_Sparepart.pdf");
